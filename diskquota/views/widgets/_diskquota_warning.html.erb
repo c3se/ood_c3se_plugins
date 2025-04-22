@@ -1,0 +1,40 @@
+<!--
+    DiskQuota widget for showing a warning box when some directory is near quota
+  -->
+
+<style>
+
+  .c3se-quota {
+      display: none;
+  }
+  .c3se-quota:has(li) {
+      display: block;
+      margin-top: 16px;
+  }
+
+</style>
+
+<div class='c3se-quota warning alert alert-warning card'>
+  <p>Some of your directories are full, see how to check them in
+    <a href="https://www.c3se.chalmers.se/documentation/file_transfer/filesystem/">
+      our documentation.</a>
+  </p>
+  <ul>
+    <% DiskQuota.new.disk_quota.each do |res| %>
+    <% if res["usage_bytes"].to_f > 0.8*res["limit_bytes"].to_f %>
+    <li>
+      <code><%= res["title"] %></code> is
+      <b><%= sprintf("%d", res["usage_bytes"].to_f/res["limit_bytes"].to_f*100) %>%</b>
+      full.
+    </li>
+    <% end %>
+    <% if res.key?("usage_files") and (res["usage_files"].to_f > 0.8*res["limit_files"].to_f) %>
+    <li>
+      <code><%= res["title"] %></code> used
+      <b><%= sprintf("%d", res["usage_files"].to_f/res["limit_files"].to_f*100) %>%</b>
+      file counts.
+    </li>
+    <% end %>
+    <% end %>
+  </ul>
+</div>

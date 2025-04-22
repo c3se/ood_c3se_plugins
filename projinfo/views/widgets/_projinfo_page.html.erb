@@ -1,0 +1,46 @@
+<!--
+  Projinfo ERB template
+  Expects a list of projects from projinfo \-\-json.
+  -->
+
+<%
+  user_projects=Projinfo.new.main
+%>
+
+
+<table style="font-family: monospace; text-align: right" class = "table table-striped table-condensed dataTable no-footer">
+<tr>
+  <th title="The usage, allocation and queue applies to this project" style="text-align: left">Project</th>
+  <th title="The total usage for this project">Used[h]</th>
+  <th title="The allocation for this project">Allocated[h]</th>
+  <th title="The partition/queue the usage is reported for">Queue</th>
+</tr>
+<% user_projects.each do |project| %>
+<tr>
+   <td title="Total usage and allocation for project <%= project["project"] %>" style="text-align: left"><%= project["project"] %></td>
+  <td title="Usage is reported in <%= project["unit_desc"] %> per rolling 30 day window">
+  <% if project["used"].to_f > 3*project["allocated"].to_f %>
+    <i title="Warning! You have used three times your allocation" class="fa fa-warning" style="font-size: 1.25rem; color: red" aria-hidden="true"></i>
+  <% elsif project["used"].to_f > 2*project["allocated"].to_f %>
+    <i title="Warning! You have used more than double your allocation" class="fa fa-warning" style="font-size: 1.25rem; color: #f2a60c" aria-hidden="true"></i>
+  <% elsif project["used"].to_f > project["allocated"].to_f %>
+    <i title="Warning! You have used more than your allocation" class="fa fa-warning" style="font-size: 1.25rem; color: #eef20c" aria-hidden="true"></i>
+  <% end %>
+  <%= sprintf("%.2f", project["used"].to_f) %>
+  </td>
+  <td title="Allocation is reported in <%= project["unit_desc"] %> per rolling 30 day window"><%= project["allocated"] %></td>
+  <td title="The system the queue belongs to"><%= project["queue"] %></td>
+</tr>
+<% project["users"].each do |user| %>
+<tr>
+  <td style="text-align: left; padding-left: 2em" title="Usage for user <%= user["username"] %> in project <%= project["project"] %>"><%= user["username"] %></td>
+  <td title="Usage is reported in <%= project["unit_desc"] %> per rolling 30 day window">
+  <%= sprintf("%.2f", user["used"].to_f) %>
+  </td>
+  <td></td>
+  <td></td>
+</tr>
+<%end%>
+<%end%>
+</table>
+<p>Please see <a href = "https://www.c3se.chalmers.se/documentation/running_jobs/">Running jobs article at C3SE website</a> for more information.</p>
