@@ -1,0 +1,26 @@
+<!--
+    DiskQuota widget for showing a warning box when some directory is near quota
+  -->
+<%= turbo_include_tags %>
+
+
+<style>
+  .diskquota-widget {
+      display: none;
+  }
+  .diskquota-widget:has(li) {
+      display: block;
+      margin-top: 16px;
+  }
+</style>
+
+<div class='diskquota-widget warning alert alert-warning card'>
+  <p>Some of your directories are full, see how to check them in
+    <a href="https://www.c3se.chalmers.se/documentation/file_transfer/filesystem/">
+      our documentation.</a>
+  </p>
+  <turbo-frame id="diskquota-widget-list"
+	       src="<%= diskquota_widget_list_path(format: :turbo_stream) %>">
+  </turbo-frame>
+
+</div>
