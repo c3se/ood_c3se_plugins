@@ -1,0 +1,392 @@
+<%= turbo_include_tags %>
+
+<div class='lmod-chosen-box'>
+  <div id="lmod-chosen-list">
+    <input id='lmod-filter' placeholder="type to filter">
+  </div>
+  <div class='lmod-copy-button' onClick='copyOneLiner(event)'>Copy</div>
+</div>
+<div class='lmod-help'>
+  Search in available modules and copy a command to load them,
+  you can read more about the module system
+  <a href='https://www.c3se.chalmers.se/documentation/module_system/modules'>
+    here</a>.</br>
+  <div id='lmod-help-error'></div>
+</div>
+<hr>
+
+<div id="lmod-list">
+</div>
+
+<style>
+  #main_container {
+      flex: 1 auto;
+      height: 0;
+  }
+
+  .row {
+      height: 100%;
+  }
+
+  .col-md-12 {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+  }
+
+  .lmod-chosen-box {
+      border: 1px solid #1a7b6d;
+      border-radius: 0.375rem;
+      background: white;
+      display: flex;
+  }
+
+  form {
+      display: inline;
+  }
+
+  select {
+      border: none;
+      outline: none;
+      background-color: #eef2f3;
+  }
+
+  select:not(:has(option:nth-child(2))) {
+      pointer-events: none;
+      opacity: 0.6;
+      cursor: not-allowed;
+      appearance: none;
+  }
+
+  .lmod-help {
+      margin: 8px 8px 0;
+      font-size: 0.9rem;
+  }
+
+  #lmod-help-error {
+      font-family: monospace;
+      border-top: 1px dotted #dddddd;
+      margin-top: 8px;
+      padding-top: 8px;
+  }
+
+  #lmod-help-error:empty {
+      display: none;
+  }
+
+  .lmod-tool-bar {
+      margin-top: 8px;
+  }
+
+  .lmod-box {
+      border: 1px solid #dddddd;
+      border-radius: 0.375rem;
+      display: flex;
+      margin-bottom: 1rem;
+      background: white;
+  }
+
+  .lmod-box:last-child {
+      margin-bottom: 0rem;
+  }
+
+  #lmod-filter {
+      border: none;
+      outline: none;
+      flex-grow: 1;
+  }
+
+  .lmod-chosen-card {
+      align-items: center;
+      display: flex;
+      cursor: pointer;
+  }
+
+  .lmod-chosen-card:hover {
+      border-color: #7a1a28;
+      text-decoration: line-through;
+      text-decoration-color: #7a1a28;
+  }
+
+  .lmod-chosen-card,
+  #lmod-filter {
+      font-family: monospace;
+      height: 2em;
+      padding: 0 0.5rem;
+      margin-right: 0.5rem;
+  }
+
+  #lmod-list {
+      overflow-y: auto;
+      margin-bottom: 10px;
+      flex-grow: 1;
+  }
+
+  #lmod-list::-webkit-scrollbar {
+      width: 18px;
+  }
+
+  #lmod-list::-webkit-scrollbar-thumb {
+      background: #dddddd;
+      border-right:0px solid transparent;
+      border-left:10px solid transparent;
+      background-clip: padding-box;
+  }
+
+  #lmod-list::-webkit-scrollbar-track {
+      background: #eeeeee;
+      border-right:0px solid transparent;
+      border-left:10px solid transparent;
+      background-clip: padding-box;
+  }
+
+  #lmod-list::-webkit-scrollbar-thumb:hover {
+      background: #1a7b6d;
+      border-right:0px solid transparent;
+      border-left:10px solid transparent;
+      background-clip: padding-box;
+  }
+
+  #lmod-chosen-list {
+      margin: 8px;
+      flex-grow: 1;
+      display: flex;
+      flex-wrap: wrap;
+      row-gap: 8px;
+  }
+
+  .lmod-chosen-card {
+      font-family: monospace;
+      border: 1px solid #dddddd;
+  }
+
+  .lmod-box:hover {
+      border-color: #1a7b6d;
+  }
+
+  .lmod-copy-button,
+  .lmod-add-button {
+      color: #dddddd;
+      border-left: 1px solid #dddddd;
+      flex: 0 0 60px;
+      padding: 0 12px;
+      margin: 12px 0;
+      cursor: pointer;
+  }
+
+  .lmod-copy-button:hover,
+  .lmod-add-button:hover {
+      color: #1a7b6d;
+  }
+
+  .lmod-copy-button.copied,
+  .lmod-add-button.added {
+      color: #1a7b6d;
+      cursor: default;
+  }
+
+  .lmod-main {
+      flex-grow: 1;
+      padding: 12px;
+  }
+
+  .lmod-name {
+      font-family: monospace;
+  }
+
+  .lmod-name:after {
+      content: ' / ';
+  }
+
+  .lmod-provide {
+      font-family: monospace;
+      font-size: .9rem;
+      margin-top: 8px;
+  }
+
+  .lmod-ver {
+      font-family: monospace;
+  }
+
+  .lmod-desc {
+      border-top: 1px solid #dddddd;
+      padding-top: 8px;
+      margin-top: 8px;
+  }
+</style>
+
+
+<script>
+
+  var spiderJson={};
+
+  async function fetchSpiderJson() {
+      try {
+          const response = await fetch("/pun/sys/dashboard/lmod_spider.json");
+          if (!response.ok) throw new Error("Failed to load modules");
+          spiderJson = await response.json();
+          renderModuleList();
+          console.log("Modules refreshed");
+      } catch (err) {
+          console.error("Module fetch failed", err);
+      }
+  }
+
+  function filterModules(filter) {
+      const container = document.querySelector("#lmod-list");
+      container.querySelectorAll(".lmod-box").forEach(
+          element => {
+              const name=element.querySelector('.lmod-name').innerHTML;
+              if (name.toLowerCase().includes(filter)) {
+                  element.style.display = 'flex';
+              } else {
+                  for (const v in spiderJson[name]) {
+                      if (spiderJson[name][v].provides) {
+                          for (const p in spiderJson[name][v].provides) {
+                              if (spiderJson[name][v].provides[p].toLowerCase().includes(filter)) {
+                                  element.style.display = 'flex';
+                                  return;
+                              }
+                          }
+                      }
+                  }
+                  element.style.display = 'none';
+              }
+              ;
+          }
+      );
+  }
+
+  function renderModuleList() {
+      query = "";
+      const container = document.querySelector("#lmod-list");
+      container.innerHTML = Object.keys(spiderJson).sort().map(name =>
+          renderModule(name)).join("");
+
+      const event = new Event('change');
+      container.querySelectorAll(".lmod-ver").forEach(
+          element => element.dispatchEvent(event));
+  }
+
+  function renderModule(name) {
+      const versions=Object.keys(spiderJson[name]).toSorted(
+        (a, b) => spiderJson[name][a]['Version'].localeCompare(spiderJson[name][b]['Version'])
+      ).toReversed().map(
+        key => `<option value='${key}'>${spiderJson[name][key]['Version']}</option>`
+      ).join("");
+
+      const moduleBox=`
+<div class='lmod-box'>
+  <div class='lmod-main'>
+    <span class='lmod-name'>${name}</span>
+    <select class='lmod-ver' onChange='verSelect(event)'>
+      ${versions}
+    </select>
+    <div class='lmod-desc'> waiting for description to load </div>
+  </div>
+  <div class='lmod-add-button' onClick='moduleAdd(event)'>Add</div>
+</div>`;
+      return moduleBox;
+  }
+
+  function moduleAdd(event) {
+      const add_button = event.target;
+      const main_dom = add_button.parentNode;
+      const name_dom = main_dom.querySelector('.lmod-name');
+      const ver_dom = main_dom.querySelector('.lmod-ver');
+      const name = name_dom.innerHTML;
+      const version = ver_dom.options[ver_dom.selectedIndex].text;
+
+      const chosen_box = document.querySelector('#lmod-chosen-list');
+      const filter = document.querySelector('#lmod-filter');
+
+      add_button.innerHTML='Added';
+      add_button.classList.add('added');
+      add_button.onclick='';
+
+      var new_chosen = document.createElement('div');
+      new_chosen.classList.add('lmod-chosen-card');
+      new_chosen.innerHTML = `${name}/${version}`;
+      new_chosen.addEventListener('click', function () {
+          add_button.innerHTML='Add';
+          add_button.onclick=(event => moduleAdd(event));
+          add_button.className='lmod-add-button';
+          new_chosen.remove();
+          checkModules();
+      });
+      chosen_box.insertBefore(new_chosen, filter);
+      checkModules();
+  }
+
+
+  function verSelect(event) {
+      const verNode = event.target;
+      const verKey = verNode.value;
+      const main_dom = verNode.parentNode;
+      const name_dom = main_dom.querySelector('.lmod-name');
+      const desc_dom = main_dom.querySelector('.lmod-desc');
+      name = name_dom.innerHTML;
+      desc = spiderJson[name][verKey]['Description'];
+
+      if ('provides' in spiderJson[name][verKey]) {
+          desc += '<div class="lmod-provide">Provides: ';
+          desc += spiderJson[name][verKey]['provides'].join(', ');
+          desc += '</div>';
+      };
+      desc_dom.innerHTML = desc;
+  }
+
+
+  function getOneliner(){
+      let modules = [...chosen_box.querySelectorAll('.lmod-chosen-card')].map(
+          card => card.innerHTML ).join(' ');
+      return 'module load ' + modules;
+  }
+
+  function checkModules() {
+      let chosen_box = document.querySelector('#lmod-chosen-list');
+      let modules = [...chosen_box.querySelectorAll('.lmod-chosen-card')].map(
+          card => card.innerHTML );
+      const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+      fetch("/pun/sys/dashboard/lmod_check", {
+	  method: "POST",
+	  headers: {
+	      "Content-Type": "application/json",
+	      "Accept": "text/vnd.turbo-stream.html",
+	      "X-CSRF-Token": token
+	  },
+	  body: JSON.stringify({ modules: modules })
+      }).then(
+	  response => response.text()
+      ).then(
+	  html => Turbo.renderStreamMessage(html)
+      )
+  }
+
+  function copyOneLiner(event) {
+      const copyButton = event.target;
+      const chosen_box = document.querySelector('#lmod-chosen-list');
+      let oneLiner = getOneliner();
+      let modules = [...chosen_box.querySelectorAll('.lmod-chosen-card')].map(
+          card => card.innerHTML )
+      let oneLines = 'module load ' + modules.join(' ');
+
+      navigator.clipboard.writeText(oneLiner);
+      copyButton.innerHTML = 'Copied';
+      copyButton.classList.add('copied');
+      setTimeout(()=>{
+          copyButton.className = 'lmod-copy-button';
+          copyButton.innerHTML = 'Copy';
+      }, 1000);
+  }
+
+  var lmod_timeout;
+  fetchSpiderJson();
+  document.querySelector("#lmod-filter")
+       .addEventListener('input', (e) => {
+           clearTimeout(lmod_timeout);
+           lmod_timeout = setTimeout(() => {
+               filterModules(e.target.value.toLowerCase());
+           }, 50); });
+</script>

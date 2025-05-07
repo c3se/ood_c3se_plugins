@@ -12,7 +12,7 @@ to the dashboard app using plugins which are available since OOD 4.0.
 - `diskquota`: home and project quota widget pages;
 - `projinfo`: project usage page;
 - `metrics`: metrics on active jobs and dashboard;
-
+- `lmod`: lmod module explorer;
 
 ## General setup
 
@@ -83,3 +83,4 @@ The migration and rearrangement of plugins are mostly done by Yunqi Shao at
 C3SE, inspired by [HMDC's demonstration at GOOD25][good25].
 
 [good25]: https://github.com/hmdc/good25
+=======
