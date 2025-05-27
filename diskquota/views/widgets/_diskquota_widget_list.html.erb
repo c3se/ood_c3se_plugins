@@ -1,13 +1,13 @@
 <ul id='diskquota-widget-list'>
   <% DiskQuota.new.disk_quota.each do |res| %>
-  <% if res["usage_bytes"].to_f > 0.8*res["limit_bytes"].to_f %>
+  <% if res["usage_bytes"].to_f > 0.9*res["limit_bytes"].to_f %>
   <li>
     <code><%= res["title"] %></code> is
     <b><%= sprintf("%d", res["usage_bytes"].to_f/res["limit_bytes"].to_f*100) %>%</b>
     full.
   </li>
   <% end %>
-  <% if res.key?("usage_files") and (res["usage_files"].to_f > 0.8*res["limit_files"].to_f) %>
+  <% if res.key?("usage_files") and (res["usage_files"].to_f > 0.9*res["limit_files"].to_f) %>
   <li>
     <code><%= res["title"] %></code> used
     <b><%= sprintf("%d", res["usage_files"].to_f/res["limit_files"].to_f*100) %>%</b>
