@@ -342,6 +342,7 @@
 
 
   function getOneliner(){
+      let chosen_box = document.querySelector('#lmod-chosen-list');
       let modules = [...chosen_box.querySelectorAll('.lmod-chosen-card')].map(
           card => card.innerHTML ).join(' ');
       return 'module load ' + modules;
