@@ -1,0 +1,20 @@
+<!--
+  original is here:
+  https://github.com/OSC/ondemand/blob/master/apps/dashboard/app/views/widgets/_pinned_apps.html.erb
+  tweaked to get rid of fat title
+-->
+<%- if pinned_apps? -%>
+  <h2> Pinned apps
+       <!-- I think we can live without the all-apps link (we pin everything bc_* already)
+       <small>(<a href="<%= apps_index_path %>">all apps</a>)</small>
+       -->
+  </h2>
+
+<%- if @user_configuration.pinned_apps_group_by.present? -%>
+  <%= render(partial: "/widgets/pinned_apps/group", collection: OodAppGroup.groups_for(apps: @pinned_apps, group_by: @user_configuration.pinned_apps_group_by.to_sym))  %>
+<%- else -%>
+  <div class="row">
+    <%= render partial: "/widgets/pinned_apps/app", collection: @pinned_apps %>
+  </div>
+<%- end -%>
+<%- end -%>
