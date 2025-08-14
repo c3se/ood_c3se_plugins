@@ -2,6 +2,8 @@ Rails.application.config.after_initialize do
   Rails.logger.info 'Setup custom methods and routes for lmod plugin'
 
   class LmodController < ApplicationController
+
+    # serves a json of spider cache, trimm the information to only what we need
     def spider
       require 'json'
       module_json = Rails.cache.fetch("lmod_spider", expires_in: 15.minutes) do
@@ -24,16 +26,17 @@ Rails.application.config.after_initialize do
       end
     end
 
+    # checks a list of modules by test-running module load xxx
     def check
       modules = params[:modules]
 
-      # sanity check
+      # running commands as users in a login shell so be careful, only load things that looks like:
+      # alphanumeric/alphanumeric
       modules.each do |mod|
         unless mod.match?(/^[a-zA-Z0-9_\-\.]+\/[a-zA-Z0-9_\-\.]+$/)
           raise "Invalid module: '#{mod}', will not attempt to load."
         end
       end
-
 
       stdout, stderr, status = Open3.capture3(
         "bash --login -c 'module load #{modules.join(' ')}'")
