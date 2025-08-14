@@ -3,9 +3,7 @@ Rails.application.config.after_initialize do
 
   class DiskquotaController < ApplicationController
     def widget_list
-      render turbo_stream: turbo_stream.replace(
-               "diskquota-widget-list",
-               partial: "widgets/diskquota_widget_list")
+      render partial: "widgets/diskquota_widget_list"
     end
   end
 

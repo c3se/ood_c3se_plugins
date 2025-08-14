@@ -48,9 +48,7 @@ Rails.application.config.after_initialize do
         message = ''
       end
 
-      render turbo_stream: turbo_stream.replace(
-               "lmod-help-error",
-               "<div id='lmod-help-error'>#{message}</div>")
+      render plain: message, content_type: "text/html"
     end
   end
 
